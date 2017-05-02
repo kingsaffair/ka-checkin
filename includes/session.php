@@ -60,7 +60,7 @@ class KASession {
 			array(
 				'hostname'		=> $config['general']['hostname'],
 				'description'	=> $config['general']['description'])));
-				
+
 		/*
 		 * Fix the ucam_webauth script.
 		 */
@@ -85,12 +85,8 @@ class KASession {
 					
 		if ($committee !== false) {
 			if ($committee['current']) {
-				if ($this->crsid == 'cb709') {
-					$this->user_level = 2;
-				} else {
-					// User is a member of the current committee
-					$this->user_level = 1;
-				}
+				// User is a member of the current committee
+				$this->user_level = 1;
 				return true;
 			}
 		} 

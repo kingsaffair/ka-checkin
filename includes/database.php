@@ -133,7 +133,7 @@ class database {
 			$result = $this->last_result;
 		
 		if ($result != NULL)
-			$result->fetch_assoc();
+			return $result;
 		
 	}
 	
@@ -181,7 +181,7 @@ class database {
 		$return = $this->fetchResult($result);
 		$this->free_result($result);
 		
-		return $return;
+		return $return->fetch_assoc();
 		
 	}
 	
