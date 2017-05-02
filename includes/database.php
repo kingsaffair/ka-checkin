@@ -58,19 +58,12 @@ class database {
 		global $config;
 		
 		if (!$this->connected) {
+			$this->db = new mysqli($config['database']['server'], $config['database']['username'], $config['database']['password'], $config['database']['database']);
 			
-			$this->db = @mysql_connect($config['database']['server'], $config['database']['username'], $config['database']['password']);
-			
-			if (!$this->db) {
-				trigger_error('Unable to connect to the database given in config.ini', E_USER_ERROR);
+			if ($this->db->connect_errno) {
+				trigger_error('Unable to connect to the database given in config.ini ('.$this->db->connect_errno.'). '.$this->db->connect_error, E_USER_ERROR);
 				return false;
-			}
-			
-			if (!@mysql_select_db($config['database']['database'], $this->db)) {
-				trigger_error('Could not find the database given in config.ini', E_USER_ERROR);
-				return false;
-			}
-			
+			}			
 		}
 		
 		return true;
@@ -85,7 +78,7 @@ class database {
 		if (!$this->connect())
 			return false;
 		
-		return @mysql_real_escape_string($string,$this->db); 
+		return $this->db->escape_string($string); 
 	}
 
 	/*
@@ -96,7 +89,7 @@ class database {
 		if (!$this->connect())
 			return false;
 		
-		$this->last_result = @mysql_query($query, $this->db);
+		$this->last_result = $this->db->query($query);
 		
 		if (!$this->last_result) {
 			trigger_error(sprintf('SQL Query "%s" failed', $query), E_USER_WARNING);
@@ -115,7 +108,7 @@ class database {
 		if (!$this->connect())
 			return false;
 		
-		$result = @mysql_query($query, $this->db);
+		$this->last_result = $this->db->query($query);
 		
 		if (!$result) {
 			trigger_error(sprintf('SQL Query "%s" failed', $query), E_USER_WARNING);
@@ -140,7 +133,7 @@ class database {
 			$result = $this->last_result;
 		
 		if ($result != NULL)
-			return mysql_fetch_assoc($result);
+			$result->fetch_assoc();
 		
 	}
 	
@@ -152,7 +145,7 @@ class database {
 		if (!$this->connect())
 			return false;
 		
-		return mysql_data_seek($result, $row);
+		return $result->data_seek($row);
 		
 	}
 	
@@ -167,7 +160,7 @@ class database {
 		if ($result == NULL)
 			$result = $this->last_result;
 		
-		return mysql_num_rows($result);
+		return $result->num_rows;
 		
 	}
 	
@@ -217,7 +210,7 @@ class database {
 		$q = substr($q,0,-2) . ' WHERE ' . $where . ';';
 		
 		if ($this->query($q) !== false)
-			return mysql_affected_rows();
+			return $this->db->affected_rows;
 		else
 			return false;
 		
@@ -249,7 +242,7 @@ class database {
 		$q .= "(". substr($k,0,-2) .") VALUES (". substr($v,0,-2) .");";
 		
 		if ($this->query($q) !== false)
-			return mysql_insert_id();
+			return $this->db->insert_id;
 		else
 			return false;
 		
@@ -292,7 +285,7 @@ class database {
 		if ($result == NULL)
 			$result = $this->last_result;
 
-		if ($result != NULL && !@mysql_free_result($result))
+		if ($result != NULL && !$result->free())
 			trigger_error('Failed to free the mysql result', E_USER_NOTICE);
 		
 	}
@@ -302,10 +295,8 @@ class database {
 	 */
 	public function close() {
 		if ($this->connected) {
-			if (!@mysql_select_db($config['database']['database'], $this->db)) {
-				trigger_error('Could not close the database connection', E_USER_WARNING);
-				return false;
-			}
+			$this->db->close();
+			$this->connected = false;
 		}
 		return true;
 	}
